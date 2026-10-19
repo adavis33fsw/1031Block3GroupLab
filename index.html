@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Daveler Innovation Center | Sales & Marketing Strategy Lab Simulation</title>
+  <!-- Google Fonts & Tailwind CSS -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- html2pdf for robust client-side PDF export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#f0f7ff',
+              100: '#e0effe',
+              500: '#0284c7',
+              600: '#0369a1',
+              700: '#075985',
+              900: '#0c4a6e',
+              accent: '#f59e0b',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    @media print {
+      .no-print { display: none !important; }
+      .print-only { display: block !important; }
+      body { background: white !important; color: #111827 !important; }
+      .page-break { page-break-before: always; }
+      .card-box { border: 1px solid #e5e7eb !important; box-shadow: none !important; }
+    }
+    .print-only { display: none; }
+    .tab-active {
+      border-bottom: 3px solid #0284c7;
+      color: #0284c7;
+      font-weight: 700;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased font-sans min-h-screen flex flex-col">
+
+  <!-- TOP HEADER / NAV BAR -->
+  <header class="bg-slate-900 text-white sticky top-0 z-50 shadow-md no-print border-b border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-lg bg-sky-500 flex items-center justify-center font-black text-xl text-white shadow-inner">
+          D
+        </div>
+        <div>
+          <div class="text-xs font-semibold tracking-wider text-sky-400 uppercase">Daveler Innovation Center</div>
+          <h1 class="text-base sm:text-lg font-bold leading-none">Sales & Marketing Strategy Lab (90-Min Sprint)</h1>
+        </div>
+      </div>
+
+      <!-- TIMER & ACTION BUTTONS -->
+      <div class="flex items-center space-x-3 sm:space-x-4">
+        <!-- Sprint Timer Component -->
+        <div class="bg-slate-800/90 border border-slate-700 px-3 py-1.5 rounded-lg flex items-center space-x-2">
+          <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" id="timerPulse"></span>
+          <span class="text-xs uppercase text-slate-400 font-semibold" id="currentPhaseLabel">Phase 1</span>
+          <span class="font-mono font-bold text-sky-300 text-sm sm:text-base tracking-wider" id="timerDisplay">90:00</span>
+          <div class="flex items-center space-x-1 pl-1">
+            <button onclick="toggleTimer()" id="timerToggleBtn" class="text-xs bg-slate-700 hover:bg-slate-600 px-2 py-0.5 rounded text-white" title="Start/Pause Timer">▶</button>
+            <button onclick="resetTimer()" class="text-xs bg-slate-700 hover:bg-slate-600 px-1.5 py-0.5 rounded text-slate-300" title="Reset">↺</button>
+          </div>
+        </div>
+
+        <button onclick="exportJSON()" class="text-xs sm:text-sm bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-1.5 rounded-lg font-medium transition" title="Save Backup Data">
+          💾 Save State
+        </button>
+        <button onclick="document.getElementById('importFile').click()" class="text-xs sm:text-sm bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-1.5 rounded-lg font-medium transition" title="Load Previous Work">
+          📂 Load
+        </button>
+        <input type="file" id="importFile" class="hidden" accept=".json" onchange="importJSON(event)">
+
+        <button onclick="generatePDFReport()" class="text-xs sm:text-sm bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold px-3.5 py-1.5 rounded-lg shadow transition flex items-center space-x-1.5">
+          <span>📄</span>
+          <span>Generate PDF</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- PHASE PROGRESS BAR -->
+    <div class="w-full bg-slate-800 h-1.5 flex">
+      <div id="prog-p1" class="h-full bg-sky-500 transition-all duration-300" style="width: 22.2%" title="Phase 1: Case Selection (20m)"></div>
+      <div id="prog-p2" class="h-full bg-slate-700 transition-all duration-300" style="width: 33.3%" title="Phase 2: Strategy Dev (30m)"></div>
+      <div id="prog-p3" class="h-full bg-slate-700 transition-all duration-300" style="width: 27.7%" title="Phase 3: Bot Building (25m)"></div>
+      <div id="prog-p4" class="h-full bg-slate-700 transition-all duration-300" style="width: 11.1%" title="Phase 4: Slide Prep (10m)"></div>
+      <div id="prog-p5" class="h-full bg-slate-700 transition-all duration-300" style="width: 5.7%" title="Phase 5: Pitch (5m)"></div>
+    </div>
+  </header>
+
+  <!-- NAVIGATION TABS -->
+  <nav class="bg-white border-b border-slate-200 sticky top-16 z-40 no-print shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex overflow-x-auto space-x-6 text-sm font-medium text-slate-600 custom-scrollbar">
+      <button onclick="switchTab('tab-setup')" id="nav-setup" class="py-3 px-1 whitespace-nowrap tab-active flex items-center space-x-1.5">
+        <span>👥</span><span>Team & Case Selection</span>
+      </button>
+      <button onclick="switchTab('tab-campaign')" id="nav-campaign" class="py-3 px-1 whitespace-nowrap hover:text-sky-600 flex items-center space-x-1.5">
+        <span>📢</span><span>1. Marketing Campaign (C1)</span>
+      </button>
+      <button onclick="switchTab('tab-leads')" id="nav-leads" class="py-3 px-1 whitespace-nowrap hover:text-sky-600 flex items-center space-x-1.5">
+        <span>🤝</span><span>2. Sales Leads & Selling (C2)</span>
+      </button>
+      <button onclick="switchTab('tab-funnel')" id="nav-funnel" class="py-3 px-1 whitespace-nowrap hover:text-sky-600 flex items-center space-x-1.5">
+        <span>🌪️</span><span>3. Funnel & Revenue (C3)</span>
+      </button>
+      <button onclick="switchTab('tab-bot')" id="nav-bot" class="py-3 px-1 whitespace-nowrap hover:text-sky-600 flex items-center space-x-1.5">
+        <span>🤖</span><span>4. Customer Bot Studio</span>
+      </button>
+      <button onclick="switchTab('tab-slides')" id="nav-slides" class="py-3 px-1 whitespace-nowrap hover:text-sky-600 flex items-center space-x-1.5">
+        <span>📊</span><span>5. 6-Slide Pitch Generator</span>
+      </button>
+      <button onclick="switchTab('tab-review')" id="nav-review" class="py-3 px-1 whitespace-nowrap hover:text-sky-600 flex items-center space-x-1.5">
+        <span>✅</span><span>Final Review & Export</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full" id="printableArea">
+
+    <!-- PRINT HEADER (Visible only on print/PDF) -->
+    <div class="print-only mb-6 border-b pb-4">
+      <div class="flex justify-between items-center">
+        <div>
+          <h1 class="text-2xl font-bold text-slate-900">Daveler Innovation Center — Sales & Marketing Lab Deliverable</h1>
+          <p class="text-sm text-slate-600 font-medium">Applied Sprint Submission | Entrepreneurship & Innovation</p>
+        </div>
+        <div class="text-right text-xs text-slate-500">
+          <p id="printTimestamp"></p>
+          <p class="font-bold text-slate-800">Assessed on 100-Point CoP Lab Rubric</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- TAB 0: TEAM & CASE SETUP (Phase 1)        -->
+    <!-- ========================================== -->
+    <section id="tab-setup" class="space-y-6">
+      <!-- Instructions Banner -->
+      <div class="bg-gradient-to-r from-sky-900 to-slate-900 text-white p-6 rounded-2xl shadow-sm border border-slate-800">
+        <div class="flex flex-col md:flex-row justify-between md:items-center gap-4">
+          <div>
+            <span class="inline-block px-2.5 py-0.5 bg-sky-500/20 text-sky-300 border border-sky-400/30 rounded-full text-xs font-semibold mb-2">
+              Phase 1: 20 Minutes • Lab Setup & Research
+            </span>
+            <h2 class="text-xl sm:text-2xl font-extrabold tracking-tight">Community of Practice Case Assignment</h2>
+            <p class="text-slate-300 text-sm mt-1 max-w-2xl leading-relaxed">
+              Form your group, divide professional sprint roles, select ONE of the four business cases below, and launch your integrated strategic analysis.
+            </p>
+          </div>
+          <div class="bg-slate-800/90 p-4 rounded-xl border border-slate-700 text-xs space-y-1.5 min-w-[240px]">
+            <div class="text-sky-400 font-bold uppercase tracking-wider">🎯 Core Learning Objectives</div>
+            <div class="text-slate-200"><strong>CLO14:</strong> Optimize sales funnels for B2B & B2C markets.</div>
+            <div class="text-slate-200"><strong>BLO3.5:</strong> Evaluate strategic value of diversified revenue streams.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Team Members and Roles Grid -->
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm card-box">
+        <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center space-x-2">
+          <span>👥</span><span>Sprint Team Roster & Role Division</span>
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div class="space-y-1">
+            <label class="text-xs font-bold text-slate-600 uppercase">Lead Researcher</label>
+            <input type="text" id="role_researcher" class="w-full text-sm rounded-lg border-slate-300 border p-2 focus:ring-2 focus:ring-sky-500 focus:outline-none" placeholder="Student Name" />
+            <p class="text-[11px] text-slate-400">Deep dives into case ICP & market benchmarks</p>
+          </div>
+          <div class="space-y-1">
+            <label class="text-xs font-bold text-slate-600 uppercase">Lead Strategist</label>
+            <input type="text" id="role_strategist" class="w-full text-sm rounded-lg border-slate-300 border p-2 focus:ring-2 focus:ring-sky-500 focus:outline-none" placeholder="Student Name" />
+            <p class="text-[11px] text-slate-400">Architects campaign, SPIN, and funnel flow</p>
+          </div>
+          <div class="space-y-1">
+            <label class="text-xs font-bold text-slate-600 uppercase">AI Bot / Tech Architect</label>
+            <input type="text" id="role_designer" class="w-full text-sm rounded-lg border-slate-300 border p-2 focus:ring-2 focus:ring-sky-500 focus:outline-none" placeholder="Student Name" />
+            <p class="text-[11px] text-slate-400">Engineers customer bot prompt & slide visuals</p>
+          </div>
+          <div class="space-y-1">
+            <label class="text-xs font-bold text-slate-600 uppercase">Pitch Lead / Presenter</label>
+            <input type="text" id="role_presenter" class="w-full text-sm rounded-lg border-slate-300 border p-2 focus:ring-2 focus:ring-sky-500 focus:outline-none" placeholder="Student Name" />
+            <p class="text-[11px] text-slate-400">Leads live consultative pitch against bot</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Case Selection Options -->
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm card-box">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-bold text-slate-900 flex items-center space-x-2">
+            <span>🏢</span><span>Select Your Team's Business Case (Choose 1)</span>
+          </h3>
+          <span class="text-xs bg-amber-100 text-amber-800 font-bold px-2.5 py-1 rounded-md">Required</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Option A -->
+          <label class="relative flex flex-col p-4 bg-slate-50 rounded-xl border-2 border-slate-200 hover:border-sky-500 cursor-pointer transition case-card" onclick="selectCase('A')">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-extrabold uppercase px-2 py-0.5 bg-orange-100 text-orange-800 rounded">Option A • B2B / B2C Food Tech</span>
+              <input type="radio" name="caseOption" value="A" class="w-4 h-4 text-sky-600 focus:ring-sky-500" />
+            </div>
+            <h4 class="font-bold text-slate-900 text-base">The Local Food Truck Expansion</h4>
+            <p class="text-xs text-slate-600 mt-1 leading-relaxed">
+              Expanding 1 location to 3 locations and launching a high-margin corporate catering B2B arm. Has 2,000 IG followers and strong Yelp reviews, but zero B2B sales experience.
+            </p>
+            <div class="mt-3 pt-2 border-t border-slate-200 text-xs font-semibold text-slate-500 flex justify-between">
+              <span>Budget: $5,000 (Q1)</span>
+              <span>Model: Street Food + B2B Catering</span>
+            </div>
+          </label>
+
+          <!-- Option B -->
+          <label class="relative flex flex-col p-4 bg-slate-50 rounded-xl border-2 border-slate-200 hover:border-sky-500 cursor-pointer transition case-card" onclick="selectCase('B')">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-extrabold uppercase px-2 py-0.5 bg-blue-100 text-blue-800 rounded">Option B • B2B SaaS Pivot</span>
+              <input type="radio" name="caseOption" value="B" class="w-4 h-4 text-sky-600 focus:ring-sky-500" />
+            </div>
+            <h4 class="font-bold text-slate-900 text-base">The SaaS Startup Pivot</h4>
+            <p class="text-xs text-slate-600 mt-1 leading-relaxed">
+              Freelancer project management app discovered marketing agencies (5-15 staff) are their fastest-growing cohort. Currently has 200 free-tier users and only 12 paying customers.
+            </p>
+            <div class="mt-3 pt-2 border-t border-slate-200 text-xs font-semibold text-slate-500 flex justify-between">
+              <span>Goal: Free-to-Paid Agency Funnel</span>
+              <span>Model: Freemium / SaaS Subscriptions</span>
+            </div>
+          </label>
+
+          <!-- Option C -->
+          <label class="relative flex flex-col p-4 bg-slate-50 rounded-xl border-2 border-slate-200 hover:border-sky-500 cursor-pointer transition case-card" onclick="selectCase('C')">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-extrabold uppercase px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded">Option C • D2C Sustainable Brand</span>
+              <input type="radio" name="caseOption" value="C" class="w-4 h-4 text-sky-600 focus:ring-sky-500" />
+            </div>
+            <h4 class="font-bold text-slate-900 text-base">Sustainable Fashion Brand Launch</h4>
+            <p class="text-xs text-slate-600 mt-1 leading-relaxed">
+              Launching 3 items (jacket, bag, hat made of recycled ocean plastic) with zero audience and a mission story. Must overcome green price skepticism without sounding preachy.
+            </p>
+            <div class="mt-3 pt-2 border-t border-slate-200 text-xs font-semibold text-slate-500 flex justify-between">
+              <span>Budget: $10,000 Launch</span>
+              <span>Model: D2C E-Commerce Asset Sale</span>
+            </div>
+          </label>
+
+          <!-- Option D -->
+          <label class="relative flex flex-col p-4 bg-slate-50 rounded-xl border-2 border-slate-200 hover:border-sky-500 cursor-pointer transition case-card" onclick="selectCase('D')">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-extrabold uppercase px-2 py-0.5 bg-purple-100 text-purple-800 rounded">Option D • B2B Services Rebrand</span>
+              <input type="radio" name="caseOption" value="D" class="w-4 h-4 text-sky-600 focus:ring-sky-500" />
+            </div>
+            <h4 class="font-bold text-slate-900 text-base">Professional Services Firm Rebrand</h4>
+            <p class="text-xs text-slate-600 mt-1 leading-relaxed">
+              15-year CPA firm with 200 legacy clients wants to reposition for millennial/Gen-Z startup founders & freelancers without alienating their established client base.
+            </p>
+            <div class="mt-3 pt-2 border-t border-slate-200 text-xs font-semibold text-slate-500 flex justify-between">
+              <span>Budget: $8,000 (6 Months)</span>
+              <span>Model: Retainers + Tiered Advisory</span>
+            </div>
+          </label>
+        </div>
+
+        <div class="mt-5 p-4 bg-sky-50 border border-sky-200 rounded-xl">
+          <label class="block text-xs font-bold text-sky-900 uppercase mb-1">Team Strategic Thesis / Core Challenge Statement</label>
+          <textarea id="case_thesis" rows="2" class="w-full text-sm rounded-lg border-sky-300 border p-2.5 focus:ring-2 focus:ring-sky-500 focus:outline-none bg-white" placeholder="Summarize your team's overarching core thesis: What is the primary bottleneck and what is your unified strategy to win?"></textarea>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 1: MARKETING CAMPAIGN STRATEGY (C1)    -->
+    <!-- ========================================== -->
+    <section id="tab-campaign" class="hidden space-y-6">
+      <!-- Chapter Concept Banner -->
+      <div class="bg-sky-900 text-white p-5 rounded-2xl flex items-start space-x-4 border border-sky-800">
+        <span class="text-2xl">📘</span>
+        <div>
+          <h3 class="font-bold text-base">Chapter C1 Core Concepts: Campaign Planning & Resource Allocation</h3>
+          <p class="text-xs text-sky-200 mt-0.5 leading-relaxed">
+            Campaigns succeed by establishing <strong>SMART objectives</strong>, aligning messaging to target <strong>customer personas</strong>, utilizing the <strong>AIDA framework</strong> (Attention, Interest, Desire, Action), balancing <strong>Paid, Owned, and Earned media</strong>, and managing unit economics (<strong>CAC vs. LTV</strong>).
+          </p>
+        </div>
+      </div>
+
+      <!-- Campaign Objectives & Target Audience -->
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4 card-box">
+        <h3 class="text-lg font-bold text-slate-900 flex items-center space-x-2">
+          <span>🎯</span><span>1.1 Objective & Target Persona Formulation</span>
+        </h3>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Primary Campaign Objective (Concept Dropdown)</label>
+            <select id="c1_objective_type" class="w-full text-sm rounded-lg border-slate-300 border p-2.5 bg-slate-50 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+              <option value="">-- Select Objective Type --</option>
+              <option value="Awareness">Brand Awareness (Reach, Impressions, Brand Recall)</option>
+              <option value="Lead_Gen">Lead Generation (Capturing Qualified Inbound Leads)</option>
+              <option value="Conversion">Conversion / Direct Sales (Immediate Revenue & Purchases)</option>
+              <option value="Hybrid_Awareness_Conversion">Dual Awareness & Fast Conversion Pipeline</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">SMART Goal Formulation</label>
+            <input type="text" id="c1_smart_goal" class="w-full text-sm rounded-lg border-slate-300 border p-2.5 focus:ring-2 focus:ring-sky-500 focus:outline-none" placeholder="e.g., Secure 25 corporate catering bookings ($25,000 rev) in Q1 with CAC < $200" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Target Persona Name & Demographics</label>
+            <input type="text" id="c1_persona_demographics" class="w-full text-sm rounded-lg border-slate-300 border p-2.5 focus:ring-2 focus:ring-sky-500 focus:outline-none" placeholder="e.g., HR Director Rachel (32-45, tech firm)" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Psychographics & Core Values</label>
+            <input type="text" id="c1_persona_psychographics" class="w-full text-sm rounded-lg border-slate-300 border p-2.5 focus:ring-2 focus:ring-sky-500 focus:outline-none" placeholder="e.g., Values team morale, effortless logistics, sustainability" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Primary Pain Point / Unmet Need</label>
+            <input type="text" id="c1_persona_pain" class="w-full text-sm rounded-lg border-slate-300 border p-2.5 focus:ring-2 focus:ring-sky-500 focus:outline-none" placeholder="e.g., Boring corporate lunches with unreliable delivery" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Channel Strategy & Media Mix -->
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4 card-box">
+        <h3 class="text-lg font-bold text-slate-900 flex items-center space-x-2">
+          <span>📡</span><span>1.2 Channel Selection & Media Classification</span>
+        </h3>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <!-- Paid Media -->
+          <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
+            <span class="text-xs font-extrabold uppercase px-2 py-0.5 bg-blue-100 text-blue-800 rounded">Paid Media Strategy</span>
+            <p class="text-[11px] text-slate-500 my-2">Renting audience attention for rapid scalability (Ads, sponsored posts, paid search).</p>
+            <textarea id="c1_paid_media" rows="3" class="w-full text-xs rounded-lg border border-slate-300 p-2 focus:ring-2 focus:ring-sky-500 focus:outline-none bg-white" placeholder="Specific paid platforms, targeting criteria & paid tactics..."></textarea>
+          </div>
+
+          <!-- Owned Media -->
+          <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
+            <span class="text-xs font-extrabold uppercase px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded">Owned Media Strategy</span>
+            <p class="text-[11px] text-slate-500 my-2">Assets directly controlled by the firm (Website, blog, email drip list, social accounts).</p>
+            <textarea id="c1_owned_media" rows="3" class="w-full text-xs rounded-lg border border-slate-300 p-2 focus:ring-2 focus:ring-sky-500 focus:outline-none bg-white" placeholder="Owned content hub, newsletter sequence, landing pages..."></textarea>
+          </div>
+
+          <!-- Earned Media -->
+          <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
+            <span class="text-xs font-extrabold uppercase px-2 py-0.5 bg-purple-100 text-purple-800 rounded">Earned Media Strategy</span>
+            <p class="text-[11px] text-slate-500 my-2">Organic word-of-mouth, press coverage, reviews, and user-generated content (UGC).</p>
+            <textarea id="c1_earned_media" rows="3" class="w-full text-xs rounded-lg border border-slate-300 p-2 focus:ring-2 focus:ring-sky-500 focus:outline-none bg-white" placeholder="PR pitches, client referral loops, UGC hashtag activations..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- AIDA Framework Content Matrix -->
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4 card-box">
+        <div class="flex justify-between items-center">
+          <h3 class="text-lg font-bold text-slate-900 flex items-center space-x-2">
+            <span>✍️</span><span>1.3 Creative Messaging: AIDA Framework</span>
+          </h3>
+          <span class="text-xs text-slate-400 font-mono">Strong (1925)</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div class="p-3 bg-sky-50/60 rounded-xl border border-sky-100">
+            <div class="font-bold text-sky-900 text-xs mb-1">Attention (Hook)</div>
+            <textarea id="c1_aida_a" rows="3" class="w-full text-xs rounded-lg border-sky-200 border p-2 focus:ring-2 focus:ring-sky-500 bg-white" placeholder="Bold headline, stopping power visual, surprising hook..."></textarea>
+          </div>
+          <div class="p-3 bg-sky-50/60 rounded-xl border border-sky-100">
+            <div class="font-bold text-sky-900 text-xs mb-1">Interest (Relevance)</div>
+            <textarea id="c1_aida_i" rows="3" class="w-full text-xs rounded-lg border-sky-200 border p-2 focus:ring-2 focus:ring-sky-500 bg-white" placeholder="Articulate problem, introduce core value proposition..."></textarea>
+          </div>
+          <div class="p-3 bg-sky-50/60 rounded-xl border border-sky-100">
+            <div class="font-bold text-sky-900 text-xs mb-1">Desire (Proof & Urgency)</div>
+            <textarea id="c1_aida_d" rows="3" class="w-full text-xs rounded-lg border-sky-200 border p-2 focus:ring-2 focus:ring-sky-500 bg-white" placeholder="Social proof, quantifiable benefits, risk mitigation..."></textarea>
+          </div>
+          <div class="p-3 bg-sky-50/60 rounded-xl border border-sky-100">
+            <div class="font-bold text-sky-900 text-xs mb-1">Action (Frictionless CTA)</div>
+            <textarea id="c1_aida_action" rows="3" class="w-full text-xs rounded-lg border-sky-200 border p-2 focus:ring-2 focus:ring-sky-500 bg-white" placeholder="Clear, low-barrier Call-To-Action with immediate path..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Budget Allocation & KPI Dashboard -->
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4 card-box">
+        <h3 class="text-lg font-bold text-slate-900 flex items-center space-x-2">
+          <span>💰</span><span>1.4 Line-Item Budget & KPI Tracking</span>
+        </h3>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="space-y-3">
+            <div class="flex justify-between items-center">
+              <label class="text-xs font-bold text-slate-700 uppercase">Budgeting Methodology</label>
+              <select id="c1_budget_method" class="text-xs rounded border border-slate-300 p-1 bg-slate-50">
+                <option value="Objective-Based">Objective-Based Budgeting</option>
+                <option value="Zero-Based">Zero-Based Budgeting</option>
+                <option value="Unit-Economics">Unit Economics (CAC:LTV Driven)</option>
+                <option value="Percentage-Revenue">Percentage of Projected Revenue</option>
+              </select>
+            </div>
+            <p class="text-[11px] text-slate-400">Allocate your case's assigned budget across concrete line items (include 10-15% contingency reserve).</p>
+            <div class="space-y-2 text-xs">
+              <div class="flex items-center space-x-2">
+                <input type="text" id="b_item_1" placeholder="Item 1 (e.g., Targeted LinkedIn Ads)" class="flex-1 p-1.5 border rounded" value="Digital Ad Placements (Paid Ads)" />
+                <input type="number" id="b_cost_1" placeholder="$ Cost" class="w-24 p-1.5 border rounded" oninput="calcBudget()" value="2000" />
+              </div>
+              <div class="flex items-center space-x-2">
+                <input type="text" id="b_item_2" placeholder="Item 2 (e.g., Creative Assets / Designer)" class="flex-1 p-1.5 border rounded" value="Creative Content & Video Production" />
+                <input type="number" id="b_cost_2" placeholder="$ Cost" class="w-24 p-1.5 border rounded" oninput="calcBudget()" value="1200" />
+              </div>
+              <div class="flex items-center space-x-2">
+                <input type="text" id="b_item_3" placeholder="Item 3 (e.g., CRM / Email Tool Subscription)" class="flex-1 p-1.5 border rounded" value="Software, Landing Page & Referral Tool" />
+                <input type="number" id="b_cost_3" placeholder="$ Cost" class="w-24 p-1.5 border rounded" oninput="calcBudget()" value="800" />
+              </div>
+              <div class="flex items-center space-x-2">
+                <input type="text" id="b_item_4" placeholder="Contingency Reserve (10-15%)" class="flex-1 p-1.5 border rounded font-semibold text-slate-700" value="Contingency Buffer (Flex Pivot Reserve)" />
+                <input type="number" id="b_cost_4" placeholder="$ Cost" class="w-24 p-1.5 border rounded font-semibold" oninput="calcBudget()" value="1000" />
+              </div>
+              <div class="pt-2 flex justify-between font-bold text-slate-900 border-t">
+                <span>Total Planned Campaign Spend:</span>
+                <span id="budget_total_display" class="font-mono text-sky-600">$5,000</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-3">
+            <label class="text-xs font-bold text-slate-700 uppercase block">Measurable Performance KPIs (3-5 Targets)</label>
+            <div class="space-y-2 text-xs">
+              <input type="text" id="c1_kpi_1" class="w-full p-2 border rounded" placeholder="KPI 1: Awareness (e.g., 50,000 targeted local impressions)" />
+              <input type="text" id="c1_kpi_2" class="w-full p-2 border rounded" placeholder="KPI 2: Engagement (e.g., CTR > 2.2% on LinkedIn ad carousel)" />
+              <input type="text" id="c1_kpi_3" class="w-full p-2 border rounded" placeholder="KPI 3: Conversion (e.g., 30 corporate tasting leads generated)" />
+              <input type="text" id="c1_kpi_4" class="w-full p-2 border rounded" placeholder="KPI 4: Unit Economics (e.g., Target CAC < $165, LTV:CAC > 4:1)" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 2: SALES LEADS & PERSONAL SELLING (C2) -->
+    <!-- ========================================== -->
+    <section id="tab-leads" class="hidden space-y-6">
+      <div class="bg-indigo-900 text-white p-5 rounded-2xl flex items-start space-x-4 border border-indigo-800">
+        <span class="text-2xl">🤝</span>
+        <div>
+          <h3 class="font-bold text-base">Chapter C2 Core Concepts: Inbound/Outbound Leads & Consultative Selling</h3>
+          <p class="text-xs text-indigo-200 mt-0.5 leading-relaxed">
+            Lead generation combines <strong>Inbound magnets</strong> (content, SEO, referrals) with targeted <strong>Outbound prospecting</strong>. High-potential leads are qualified via <strong>BANT / MEDDIC</strong>, nurtured via <strong>lead scoring</strong>, and converted through consultative frameworks like <strong>SPIN Selling</strong> (Situation, Problem, Implication, Need-Payoff).
+          </p>
+        </div>
+      </div>
+
+      <!-- Lead Generation Architecture & Qualification -->
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4 card-box">
+        <h3 class="text-lg font-bold text-slate-900 flex items-center space-x-2">
+          <span>🎯</span><span>2.1 Ideal Customer Profile (ICP) & Qualification Criteria</span>
+        </h3>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Inbound vs. Outbound Mix</label>
+            <select id="c2_lead_mix" class="w-full text-sm rounded-lg border-slate-300 border p-2.5 bg-slate-50 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+              <option value="Hybrid">Hybrid (50% Inbound Content / 50% Outbound Cold Outreach)</option>
+              <option value="Outbound-Dominant">Outbound-Dominant (Personal Selling & Account Outreach)</option>
+              <option value="Inbound-Dominant">Inbound-Dominant (Content, Community & Inbound MQLs)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Qualification Framework</label>
+            <select id="c2_qual_framework" class="w-full text-sm rounded-lg border-slate-300 border p-2.5 bg-slate-50 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+              <option value="BANT">BANT (Budget, Authority, Need, Timeline)</option>
+              <option value="MEDDIC">MEDDIC (Metrics, Econ Buyer, Criteria, Process, Pain, Champion)</option>
+              <option value="Challenger">Challenger Methodology (Teach, Tailor, Take Control)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Lead Temperature Threshold</label>
+            <select id="c2_lead_temp" class="w-full text-sm rounded-lg border-slate-300 border p-2.5 bg-slate-50 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+              <option value="SQL">Direct Hand-off to Sales Qualified Lead (SQL)</option>
+              <option value="MQL_Nurture">Nurture as Marketing Qualified Lead (MQL) first</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="pt-2">
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Specific BANT / Qualification Checklist for Case</label>
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+            <input type="text" id="bant_b" placeholder="Budget Criteria (e.g., Min $1,200/mo event budget)" class="p-2 border rounded" />
+            <input type="text" id="bant_a" placeholder="Authority (e.g., Office Manager or VP of People)" class="p-2 border rounded" />
+            <input type="text" id="bant_n" placeholder="Need (e.g., High-turnover morale or team offsite)" class="p-2 border rounded" />
+            <input type="text" id="bant_t" placeholder="Timeline (e.g., Booking for Q1 corporate summit)" class="p-2 border rounded" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Consultative SPIN Selling Conversation Architecture -->
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4 card-box">
+        <div class="flex justify-between items-center">
+          <h3 class="text-lg font-bold text-slate-900 flex items-center space-x-2">
+            <span>🗣️</span><span>2.2 Consultative Sales Conversation: SPIN Framework</span>
+          </h3>
+          <span class="text-xs text-slate-400 font-mono">Rackham (1988)</span>
+        </div>
+
+        <div class="space-y-3">
+          <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
+            <span class="font-bold text-xs text-indigo-900 uppercase">Situation Question (Establish Context)</span>
+            <input type="text" id="spin_s" class="w-full mt-1.5 p-2 text-xs border rounded bg-white" placeholder="e.g., How do you currently organize catering or lunch programs for your 50+ person team offsites?" />
+          </div>
+
+          <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
+            <span class="font-bold text-xs text-indigo-900 uppercase">Problem Question (Uncover Dissatisfaction)</span>
+            <input type="text" id="spin_p" class="w-full mt-1.5 p-2 text-xs border rounded bg-white" placeholder="e.g., What frustrations or drop-offs in team attendance have you experienced with standard boxed-lunch caterers?" />
+          </div>
+
+          <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
+            <span class="font-bold text-xs text-indigo-900 uppercase">Implication Question (Amplify the Pain & Cost of Inaction)</span>
+            <input type="text" id="spin_i" class="w-full mt-1.5 p-2 text-xs border rounded bg-white" placeholder="e.g., If employees disengage during these quarterly summits, how does that impact company culture and executive ROI?" />
+          </div>
+
+          <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
+            <span class="font-bold text-xs text-indigo-900 uppercase">Need-Payoff Question (Prospect Envisions Value of Solution)</span>
+            <input type="text" id="spin_n" class="w-full mt-1.5 p-2 text-xs border rounded bg-white" placeholder="e.g., If you could provide an interactive gourmet street-food truck experience parked right on-site with zero setup stress, how would that elevate the event?" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Objection Handling Playbook & Networking -->
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4 card-box">
+        <h3 class="text-lg font-bold text-slate-900 flex items-center space-x-2">
+          <span>🛡️</span><span>2.3 Objection Handling Matrix & Relationship Capital</span>
+        </h3>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="p-4 bg-rose-50/60 rounded-xl border border-rose-200 space-y-2">
+            <div class="font-bold text-rose-900 text-xs uppercase">Primary Case Objection #1 (Price / Trust / Complexity)</div>
+            <input type="text" id="c2_obj_1" class="w-full p-2 text-xs border rounded bg-white" placeholder="e.g., 'We've used conventional caterers for 5 years and your price is 20% higher.'" />
+            <div class="font-bold text-rose-900 text-xs uppercase pt-1">Consultative Reframing Response</div>
+            <textarea id="c2_resp_1" rows="2" class="w-full p-2 text-xs border rounded bg-white" placeholder="Acknowledge with active listening, reframe into total value and experiential ROI..."></textarea>
+          </div>
+
+          <div class="p-4 bg-amber-50/60 rounded-xl border border-amber-200 space-y-2">
+            <div class="font-bold text-amber-900 text-xs uppercase">Primary Case Objection #2 (Risk / Switching Cost / Habit)</div>
+            <input type="text" id="c2_obj_2" class="w-full p-2 text-xs border rounded bg-white" placeholder="e.g., 'What happens if weather is bad or the food truck breaks down on event day?'" />
+            <div class="font-bold text-amber-900 text-xs uppercase pt-1">Risk Mitigation & Proof Response</div>
+            <textarea id="c2_resp_2" rows="2" class="w-full p-2 text-xs border rounded bg-white" placeholder="Provide guaranteed SLA, backup plan, references, and guarantee protocol..."></textarea>
+          </div>
+        </div>
+
+        <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 text-xs">
+          <label class="font-bold text-slate-800 uppercase block mb-1">Relationship Capital & Co-Marketing Strategy</label>
+          <input type="text" id="c2_networking_plan" class="w-full p-2 border rounded bg-white" placeholder="e.g., Partnering with regional event planners, Chamber of Commerce mixers, LinkedIn social selling sequence." />
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 3: FUNNEL DESIGN & REVENUE STREAMS (C3) -->
+    <!-- ========================================== -->
+    <section id="tab-funnel" class="hidden space-y-6">
+      <div class="bg-emerald-900 text-white p-5 rounded-2xl flex items-start space-x-4 border border-emerald-800">
+        <span class="text-2xl">🌪️</span>
+        <div>
+          <h3 class="font-bold text-base">Chapter C3 Core Concepts: Funnel Optimization & Diverse Revenue Streams</h3>
+          <p class="text-xs text-emerald-200 mt-0.5 leading-relaxed">
+            Manage stage-by-stage <strong>conversion & drop-off rates</strong> across Awareness, Interest, Decision, Action, and Retention. Optimize using <strong>A/B testing, lead scoring, and social proof</strong>. Align revenue models (<strong>transaction, subscription, usage, freemium, hybrid</strong>) to drive customer lifetime value (LTV).
+          </p>
+        </div>
+      </div>
+
+      <!-- 5-Stage Funnel Architecture -->
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4 card-box">
+        <h3 class="text-lg font-bold text-slate-900 flex items-center space-x-2">
+          <span>📊</span><span>3.1 5-Stage Sales Funnel Architecture & Conversion Tactics</span>
+        </h3>
+
+        <div class="space-y-3">
+          <!-- Top: Awareness -->
+          <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 flex flex-col md:flex-row gap-3 items-center">
+            <div class="w-full md:w-48 font-bold text-xs uppercase text-slate-700 flex items-center space-x-1.5">
+              <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+              <span>1. Awareness (Top)</span>
+            </div>
+            <input type="text" id="f_aware_tactic" class="flex-1 p-2 text-xs border rounded bg-white w-full" placeholder="Tactics: Targeted micro-influencers, SEO blog guide, LinkedIn thought leadership" />
+            <input type="text" id="f_aware_metric" class="w-full md:w-56 p-2 text-xs border rounded bg-white" placeholder="Target Metric: 40k Imp / 1.5k Visitors" />
+          </div>
+
+          <!-- Mid: Interest & Consideration -->
+          <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 flex flex-col md:flex-row gap-3 items-center">
+            <div class="w-full md:w-48 font-bold text-xs uppercase text-slate-700 flex items-center space-x-1.5">
+              <span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+              <span>2. Interest / Eval</span>
+            </div>
+            <input type="text" id="f_interest_tactic" class="flex-1 p-2 text-xs border rounded bg-white w-full" placeholder="Tactics: Interactive catering menu builder, interactive ROI calculator, demo video" />
+            <input type="text" id="f_interest_metric" class="w-full md:w-56 p-2 text-xs border rounded bg-white" placeholder="Target Metric: 8% Lead Capture Rate" />
+          </div>
+
+          <!-- Mid-Low: Decision -->
+          <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 flex flex-col md:flex-row gap-3 items-center">
+            <div class="w-full md:w-48 font-bold text-xs uppercase text-slate-700 flex items-center space-x-1.5">
+              <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+              <span>3. Decision</span>
+            </div>
+            <input type="text" id="f_decision_tactic" class="flex-1 p-2 text-xs border rounded bg-white w-full" placeholder="Tactics: Free sample box tasting, live Zoom consultative walkthrough, client reviews" />
+            <input type="text" id="f_decision_metric" class="w-full md:w-56 p-2 text-xs border rounded bg-white" placeholder="Target Metric: 35% Trial-to-Quote Rate" />
+          </div>
+
+          <!-- Bottom: Action (Purchase) -->
+          <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 flex flex-col md:flex-row gap-3 items-center">
+            <div class="w-full md:w-48 font-bold text-xs uppercase text-slate-700 flex items-center space-x-1.5">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+              <span>4. Action (Close)</span>
+            </div>
+            <input type="text" id="f_action_tactic" class="flex-1 p-2 text-xs border rounded bg-white w-full" placeholder="Tactics: 1-click contract signing, flexible deposit terms, early-bird Q1 10% discount" />
+            <input type="text" id="f_action_metric" class="w-full md:w-56 p-2 text-xs border rounded bg-white" placeholder="Target Metric: 50% Close Rate from Quote" />
+          </div>
+
+          <!-- Hourglass: Retention & Referral -->
+          <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 flex flex-col md:flex-row gap-3 items-center">
+            <div class="w-full md:w-48 font-bold text-xs uppercase text-slate-700 flex items-center space-x-1.5">
+              <span class="w-2.5 h-2.5 rounded-full bg-purple-500"></span>
+              <span>5. Retention / Loop</span>
+            </div>
+            <input type="text" id="f_retention_tactic" class="flex-1 p-2 text-xs border rounded bg-white w-full" placeholder="Tactics: Quarterly VIP rebooking discount, post-event survey, B2B peer referral bonus" />
+            <input type="text" id="f_retention_metric" class="w-full md:w-56 p-2 text-xs border rounded bg-white" placeholder="Target Metric: 40% Annual Repeat Rate" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Optimization Experiments & Revenue Models -->
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4 card-box">
+        <h3 class="text-lg font-bold text-slate-900 flex items-center space-x-2">
+          <span>🧪</span><span>3.2 A/B Testing, Social Proof & Revenue Stream Diversification</span>
+        </h3>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- A/B Test Design -->
+          <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2 text-xs">
+            <span class="font-bold text-slate-800 uppercase block">Funnel Optimization: A/B Test Experiment</span>
+            <div>
+              <label class="text-[11px] text-slate-500 font-semibold">Hypothesis / Variable Tested</label>
+              <input type="text" id="ab_variable" class="w-full p-2 border rounded bg-white" placeholder="e.g., CTA Headline: 'Book Corporate Tasting' (Var A) vs. 'Calculate Catering Savings' (Var B)" />
+            </div>
+            <div>
+              <label class="text-[11px] text-slate-500 font-semibold">Primary Metric & Expected Impact</label>
+              <input type="text" id="ab_metric" class="w-full p-2 border rounded bg-white" placeholder="e.g., Form completion rate; expect +25% lift from Var B due to lower commitment friction." />
+            </div>
+          </div>
+
+          <!-- Revenue Stream Design -->
+          <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2 text-xs">
+            <span class="font-bold text-slate-800 uppercase block">Revenue Model Strategy (BLO3.5 Diversification)</span>
+            <div>
+              <label class="text-[11px] text-slate-500 font-semibold">Primary & Secondary Revenue Models</label>
+              <select id="rev_model_type" class="w-full p-2 border rounded bg-white">
+                <option value="Hybrid_Transaction_Subscription">Hybrid: Core Transaction + Recurring Subscription Retainer</option>
+                <option value="Transaction_Asset">Transaction-Based (One-time asset / event fees)</option>
+                <option value="Freemium_Tiered">Freemium to Tiered SaaS / Retainer</option>
+                <option value="Licensing_Franchise">Licensing / Franchise Royalties</option>
+                <option value="Usage_Consumption">Usage-Based / Consumption Model</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-[11px] text-slate-500 font-semibold">How Diversification Mitigates Risk</label>
+              <textarea id="rev_diversification_notes" rows="2" class="w-full p-2 border rounded bg-white" placeholder="e.g., Recurring corporate lunch subscriptions smooth cash flow during slow seasonal street-food months..."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Social Proof Strategy -->
+        <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 text-xs">
+          <label class="font-bold text-slate-800 uppercase block mb-1">Social Proof Integration Point</label>
+          <input type="text" id="funnel_social_proof" class="w-full p-2 border rounded bg-white" placeholder="e.g., Place verified Yelp badges and video testimonial from TechCorp Office Manager directly beside the checkout CTA." />
+        </div>
+      </div>
+
+      <!-- Diagram / Funnel Visual Upload -->
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4 card-box">
+        <h3 class="text-lg font-bold text-slate-900 flex items-center space-x-2">
+          <span>🖼️</span><span>3.3 Visual Artifacts & Funnel Infographic Upload</span>
+        </h3>
+        <p class="text-xs text-slate-500">
+          Upload any funnel diagrams, customer journey charts, or campaign mockups created with AI tools (Nano Banana Pro, Seedream 4, Canva, etc.) or drawn by your team (PNG/JPG supported).
+        </p>
+
+        <div class="flex flex-col sm:flex-row gap-4 items-start">
+          <div class="flex-1 w-full">
+            <input type="file" id="funnel_image_file" accept="image/png, image/jpeg" class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100" onchange="previewImage(this, 'funnel_preview')">
+          </div>
+        </div>
+
+        <div id="funnel_preview_container" class="hidden mt-3 border border-slate-200 rounded-xl p-2 bg-slate-50 max-w-md">
+          <p class="text-[11px] font-bold text-slate-500 mb-1">Uploaded Visual Preview:</p>
+          <img id="funnel_preview" src="" alt="Funnel Visual Preview" class="rounded-lg max-h-56 w-auto object-contain mx-auto" />
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 4: CUSTOMER BOT STUDIO (Phase 3)       -->
+    <!-- ========================================== -->
+    <section id="tab-bot" class="hidden space-y-6">
+      <div class="bg-slate-900 text-white p-5 rounded-2xl flex items-start space-x-4 border border-slate-800">
+        <span class="text-2xl">🤖</span>
+        <div>
+          <h3 class="font-bold text-base">Phase 3: 25 Minutes • BoodleBox Customer Bot Architecture & Live Simulator</h3>
+          <p class="text-xs text-slate-300 mt-0.5 leading-relaxed">
+            In this phase, you build your simulated target customer bot. The bot must possess a <strong>skeptical persona</strong>, realistic budget constraints, and push back on vague claims. You will pitch to this persona live in Phase 5!
+          </p>
+        </div>
+      </div>
+
+      <!-- Bot Prompt Builder -->
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4 card-box">
+        <div class="flex justify-between items-center">
+          <h3 class="text-lg font-bold text-slate-900 flex items-center space-x-2">
+            <span>⚙️</span><span>4.1 Bot Persona System Prompt Engineering</span>
+          </h3>
+          <button onclick="generateBotPromptTemplate()" class="text-xs bg-sky-100 hover:bg-sky-200 text-sky-800 px-3 py-1 rounded-md font-bold transition">
+            ✨ Auto-Generate Template from Case
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+          <div>
+            <label class="font-bold text-slate-700 uppercase block mb-1">Bot Persona Name & Job Title</label>
+            <input type="text" id="bot_persona_name" class="w-full p-2 border rounded" placeholder="e.g., Sarah Jenkins, VP of People Ops" />
+          </div>
+          <div>
+            <label class="font-bold text-slate-700 uppercase block mb-1">Target Company & Industry</label>
+            <input type="text" id="bot_company" class="w-full p-2 border rounded" placeholder="e.g., Apex FinTech (85 employees)" />
+          </div>
+          <div>
+            <label class="font-bold text-slate-700 uppercase block mb-1">Skeptical Stance / Hard Objection</label>
+            <input type="text" id="bot_primary_concern" class="w-full p-2 border rounded" placeholder="e.g., 'Worried about logistical delays & price'" />
+          </div>
+        </div>
+
+        <div>
+          <label class="font-bold text-xs text-slate-700 uppercase block mb-1">Full BoodleBox System Prompt (Copy into Custom Bot Builder)</label>
+          <textarea id="bot_system_prompt" rows="5" class="w-full text-xs font-mono p-3 border rounded-xl bg-slate-900 text-sky-300 focus:ring-2 focus:ring-sky-500 focus:outline-none" placeholder="You are Sarah Jenkins, VP of People Ops at Apex FinTech..."></textarea>
+        </div>
+      </div>
+
+      <!-- Interactive In-Lab Practice Testbed -->
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4 card-box">
+        <div class="flex justify-between items-center">
+          <h3 class="text-lg font-bold text-slate-900 flex items-center space-x-2">
+            <span>💬</span><span>4.2 In-Simulation Roleplay Practice Playground</span>
+          </h3>
+          <span class="text-xs bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded">Sprint Testing Mode</span>
+        </div>
+        <p class="text-xs text-slate-500">
+          Rehearse your consultative pitch questions before your live presentation. Test if your questions handle objections cleanly!
+        </p>
+
+        <!-- Simulated Chat Container -->
+        <div class="border border-slate-200 rounded-xl bg-slate-50 overflow-hidden flex flex-col h-72">
+          <div id="sim_chat_history" class="flex-1 p-4 overflow-y-auto space-y-3 custom-scrollbar text-xs">
+            <div class="flex items-start space-x-2">
+              <span class="bg-slate-800 text-white font-bold p-1 rounded text-[10px]">PROSPECT</span>
+              <div class="bg-white p-2.5 rounded-lg border border-slate-200 shadow-sm max-w-[85%] text-slate-800">
+                Hi there. Thanks for reaching out, but our team is pretty busy right now and we already have standard vendor contracts in place. What makes your solution worth my time?
+              </div>
+            </div>
+          </div>
+
+          <div class="p-2.5 bg-white border-t border-slate-200 flex space-x-2">
+            <input type="text" id="sim_pitch_input" class="flex-1 text-xs border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="Type your consultative SPIN question or pitch response..." onkeypress="if(event.key==='Enter') sendSimulatedPitch()" />
+            <button onclick="sendSimulatedPitch()" class="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-4 py-2 rounded-lg transition">
+              Pitch
+            </button>
+            <button onclick="resetSimChat()" class="text-slate-400 hover:text-slate-600 text-xs px-2" title="Reset Chat">
+              ↺
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 5: 6-SLIDE PITCH GENERATOR (Phase 4)   -->
+    <!-- ========================================== -->
+    <section id="tab-slides" class="hidden space-y-6">
+      <div class="bg-slate-900 text-white p-5 rounded-2xl flex items-start space-x-4 border border-slate-800">
+        <span class="text-2xl">📊</span>
+        <div>
+          <h3 class="font-bold text-base">Phase 4: 10 Minutes • 6-Slide Executive Pitch Deck Prompts</h3>
+          <p class="text-xs text-slate-300 mt-0.5 leading-relaxed">
+            Rule: <strong>Slides must NOT be text-heavy</strong> — use structured prompts to generate concise visuals, bullet frameworks, and clear speaking roles. Each slide must correspond to your 5-minute presentation structure.
+          </p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- Slide 1 -->
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-2 card-box flex flex-col justify-between">
+          <div>
+            <div class="flex justify-between items-center mb-1">
+              <span class="font-black text-xs text-sky-600">SLIDE 1</span>
+              <span class="text-[11px] font-bold text-slate-400">Overview & Thesis</span>
+            </div>
+            <h4 class="font-bold text-xs text-slate-800">Case Overview & Strategic Thesis</h4>
+            <textarea id="slide_prompt_1" rows="3" class="w-full mt-2 text-xs p-2 border rounded-lg bg-slate-50" placeholder="Prompt used to generate slide 1 structure & visuals..."></textarea>
+          </div>
+          <input type="text" id="slide_speaker_1" placeholder="Speaker: Student Name" class="text-xs p-1.5 border rounded" />
+        </div>
+
+        <!-- Slide 2 -->
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-2 card-box flex flex-col justify-between">
+          <div>
+            <div class="flex justify-between items-center mb-1">
+              <span class="font-black text-xs text-sky-600">SLIDE 2</span>
+              <span class="text-[11px] font-bold text-slate-400">Chapter C1</span>
+            </div>
+            <h4 class="font-bold text-xs text-slate-800">Marketing Campaign Strategy (AIDA & Budget)</h4>
+            <textarea id="slide_prompt_2" rows="3" class="w-full mt-2 text-xs p-2 border rounded-lg bg-slate-50" placeholder="Prompt used for channel allocation, budget chart & AIDA copy..."></textarea>
+          </div>
+          <input type="text" id="slide_speaker_2" placeholder="Speaker: Student Name" class="text-xs p-1.5 border rounded" />
+        </div>
+
+        <!-- Slide 3 -->
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-2 card-box flex flex-col justify-between">
+          <div>
+            <div class="flex justify-between items-center mb-1">
+              <span class="font-black text-xs text-sky-600">SLIDE 3</span>
+              <span class="text-[11px] font-bold text-slate-400">Chapter C2</span>
+            </div>
+            <h4 class="font-bold text-xs text-slate-800">Sales Lead Development (ICP & SPIN)</h4>
+            <textarea id="slide_prompt_3" rows="3" class="w-full mt-2 text-xs p-2 border rounded-lg bg-slate-50" placeholder="Prompt used for lead qualification & consultative selling flow..."></textarea>
+          </div>
+          <input type="text" id="slide_speaker_3" placeholder="Speaker: Student Name" class="text-xs p-1.5 border rounded" />
+        </div>
+
+        <!-- Slide 4 -->
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-2 card-box flex flex-col justify-between">
+          <div>
+            <div class="flex justify-between items-center mb-1">
+              <span class="font-black text-xs text-sky-600">SLIDE 4</span>
+              <span class="text-[11px] font-bold text-slate-400">Chapter C3</span>
+            </div>
+            <h4 class="font-bold text-xs text-slate-800">Sales Funnel Design & Revenue Model</h4>
+            <textarea id="slide_prompt_4" rows="3" class="w-full mt-2 text-xs p-2 border rounded-lg bg-slate-50" placeholder="Prompt used for 5-stage funnel visual & revenue diversification..."></textarea>
+          </div>
+          <input type="text" id="slide_speaker_4" placeholder="Speaker: Student Name" class="text-xs p-1.5 border rounded" />
+        </div>
+
+        <!-- Slide 5 -->
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-2 card-box flex flex-col justify-between">
+          <div>
+            <div class="flex justify-between items-center mb-1">
+              <span class="font-black text-xs text-sky-600">SLIDE 5</span>
+              <span class="text-[11px] font-bold text-slate-400">Persona Testing</span>
+            </div>
+            <h4 class="font-bold text-xs text-slate-800">Customer Bot Persona & Objections</h4>
+            <textarea id="slide_prompt_5" rows="3" class="w-full mt-2 text-xs p-2 border rounded-lg bg-slate-50" placeholder="Prompt used to highlight simulated prospect profile & tough objections..."></textarea>
+          </div>
+          <input type="text" id="slide_speaker_5" placeholder="Speaker: Student Name" class="text-xs p-1.5 border rounded" />
+        </div>
+
+        <!-- Slide 6 -->
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-2 card-box flex flex-col justify-between">
+          <div>
+            <div class="flex justify-between items-center mb-1">
+              <span class="font-black text-xs text-sky-600">SLIDE 6</span>
+              <span class="text-[11px] font-bold text-slate-400">Live Bot Demo</span>
+            </div>
+            <h4 class="font-bold text-xs text-slate-800">Live Bot Demo Transition & Objections</h4>
+            <textarea id="slide_prompt_6" rows="3" class="w-full mt-2 text-xs p-2 border rounded-lg bg-slate-50" placeholder="Transition slide setup for live audience roleplay with AI bot..."></textarea>
+          </div>
+          <input type="text" id="slide_speaker_6" placeholder="Speaker: Student Name" class="text-xs p-1.5 border rounded" />
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 6: FINAL REVIEW & EXPORT               -->
+    <!-- ========================================== -->
+    <section id="tab-review" class="hidden space-y-6">
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6 card-box">
+        <div class="flex flex-col sm:flex-row justify-between sm:items-center border-b pb-4 gap-2">
+          <div>
+            <h3 class="text-xl font-bold text-slate-900">Sprint Summary & CoP Rubric Verification</h3>
+            <p class="text-xs text-slate-500">Ensure all 4 grading rubric criteria are satisfied before generating the final PDF.</p>
+          </div>
+          <button onclick="generatePDFReport()" class="bg-sky-500 hover:bg-sky-400 text-slate-950 font-extrabold text-sm px-5 py-2.5 rounded-xl shadow transition flex items-center space-x-2">
+            <span>📥</span><span>Download Final Lab PDF Report</span>
+          </button>
+        </div>
+
+        <!-- Rubric Checklist -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+          <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">
+            <div class="flex justify-between font-bold text-slate-800">
+              <span>1. Integrated Strategy Quality</span>
+              <span class="text-sky-600">25 Points</span>
+            </div>
+            <p class="text-slate-500 text-[11px]">
+              Seamlessly integrates marketing campaigns, lead qualification, and funnel design. Specific budget & SMART KPIs provided.
+            </p>
+          </div>
+
+          <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">
+            <div class="flex justify-between font-bold text-slate-800">
+              <span>2. Bot Design & Functionality</span>
+              <span class="text-sky-600">25 Points</span>
+            </div>
+            <p class="text-slate-500 text-[11px]">
+              Richly detailed persona with realistic pushback and case-specific objections that create an authentic sales test.
+            </p>
+          </div>
+
+          <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">
+            <div class="flex justify-between font-bold text-slate-800">
+              <span>3. Presentation & Live Demo</span>
+              <span class="text-sky-600">25 Points</span>
+            </div>
+            <p class="text-slate-500 text-[11px]">
+              6-slide deck planned with visual focus; all members have speaking roles; live consultative handling of bot objection prepared.
+            </p>
+          </div>
+
+          <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">
+            <div class="flex justify-between font-bold text-slate-800">
+              <span>4. Collaboration & Time Management</span>
+              <span class="text-sky-600">25 Points</span>
+            </div>
+            <p class="text-slate-500 text-[11px]">
+              Labor divided effectively across researcher, strategist, designer, and presenter roles within the 90-minute sprint constraint.
+            </p>
+          </div>
+        </div>
+
+        <!-- Live Snapshot View for Print / Submission -->
+        <div class="border-t pt-4">
+          <h4 class="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wider">Executive Plan Snapshot</h4>
+          <div id="summarySnapshot" class="bg-slate-50 p-4 rounded-xl text-xs space-y-2 text-slate-700">
+            <!-- Dynamically populated on tab switch -->
+            <p class="italic text-slate-400">Fill in the preceding tabs to see your consolidated report snapshot.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="bg-slate-900 text-slate-400 py-6 border-t border-slate-800 text-xs text-center no-print">
+    <div class="max-w-7xl mx-auto px-4">
+      <p>Daveler Innovation Center Digital Design & Communications Lab • Entrepreneurship & Innovation Curriculum</p>
+      <p class="text-slate-500 mt-1">Interactive Simulation Tool • Developed for GitHub Pages Classroom Deployment</p>
+    </div>
+  </footer>
+
+  <!-- SCRIPT LOGIC -->
+  <script>
+    // TIMER ENGINE (90-Minute Sprint with 5 Phases)
+    let totalSeconds = 90 * 60; // 5400 seconds
+    let isRunning = false;
+    let timerInterval = null;
+
+    const phases = [
+      { name: "Phase 1: Case & Research", duration: 20 * 60, id: "prog-p1" },
+      { name: "Phase 2: Strategy Dev", duration: 30 * 60, id: "prog-p2" },
+      { name: "Phase 3: Bot Building", duration: 25 * 60, id: "prog-p3" },
+      { name: "Phase 4: Slide Prep", duration: 10 * 60, id: "prog-p4" },
+      { name: "Phase 5: Live Pitch", duration: 5 * 60, id: "prog-p5" },
+    ];
+
+    function updateTimerDisplay() {
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = totalSeconds % 60;
+      document.getElementById('timerDisplay').innerText = 
+        `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
+      // Calculate elapsed time to update phase labels and progress
+      const elapsed = (90 * 60) - totalSeconds;
+      let accumulated = 0;
+      let currentPhaseIndex = 0;
+
+      for (let i = 0; i < phases.length; i++) {
+        accumulated += phases[i].duration;
+        if (elapsed <= accumulated) {
+          currentPhaseIndex = i;
+          break;
+        }
+      }
+
+      document.getElementById('currentPhaseLabel').innerText = phases[currentPhaseIndex].name.split(':')[0];
+
+      // Highlight active phase bar
+      for (let i = 0; i < phases.length; i++) {
+        const bar = document.getElementById(`prog-p${i+1}`);
+        if (i < currentPhaseIndex) {
+          bar.className = "h-full bg-emerald-500 transition-all duration-300";
+        } else if (i === currentPhaseIndex) {
+          bar.className = "h-full bg-sky-500 transition-all duration-300 animate-pulse";
+        } else {
+          bar.className = "h-full bg-slate-700 transition-all duration-300";
+        }
+      }
+    }
+
+    function toggleTimer() {
+      if (isRunning) {
+        clearInterval(timerInterval);
+        isRunning = false;
+        document.getElementById('timerToggleBtn').innerText = '▶';
+        document.getElementById('timerPulse').classList.remove('animate-pulse');
+      } else {
+        isRunning = true;
+        document.getElementById('timerToggleBtn').innerText = '❚❚';
+        document.getElementById('timerPulse').classList.add('animate-pulse');
+        timerInterval = setInterval(() => {
+          if (totalSeconds > 0) {
+            totalSeconds--;
+            updateTimerDisplay();
+          } else {
+            clearInterval(timerInterval);
+            isRunning = false;
+            alert("⏰ 90-Minute Sprint Time is up! Prepare for group presentations.");
+          }
+        }, 1000);
+      }
+    }
+
+    function resetTimer() {
+      clearInterval(timerInterval);
+      isRunning = false;
+      totalSeconds = 90 * 60;
+      document.getElementById('timerToggleBtn').innerText = '▶';
+      updateTimerDisplay();
+    }
+
+    // TAB SWITCHER
+    function switchTab(tabId) {
+      const tabs = ['tab-setup', 'tab-campaign', 'tab-leads', 'tab-funnel', 'tab-bot', 'tab-slides', 'tab-review'];
+      const navIds = ['nav-setup', 'nav-campaign', 'nav-leads', 'nav-funnel', 'nav-bot', 'nav-slides', 'nav-review'];
+
+      tabs.forEach((id, index) => {
+        const section = document.getElementById(id);
+        const navBtn = document.getElementById(navIds[index]);
+        if (id === tabId) {
+          section.classList.remove('hidden');
+          navBtn.className = "py-3 px-1 whitespace-nowrap tab-active flex items-center space-x-1.5";
+        } else {
+          section.classList.add('hidden');
+          navBtn.className = "py-3 px-1 whitespace-nowrap hover:text-sky-600 flex items-center space-x-1.5";
+        }
+      });
+
+      if (tabId === 'tab-review') {
+        buildSummarySnapshot();
+      }
+    }
+
+    // CASE SELECTION HANDLER
+    let currentSelectedCase = '';
+    function selectCase(opt) {
+      currentSelectedCase = opt;
+      const cards = document.querySelectorAll('.case-card');
+      cards.forEach(card => {
+        card.classList.remove('border-sky-500', 'bg-sky-50/40');
+      });
+      const radio = document.querySelector(`input[name="caseOption"][value="${opt}"]`);
+      if (radio) {
+        radio.checked = true;
+        radio.closest('label').classList.add('border-sky-500', 'bg-sky-50/40');
+      }
+    }
+
+    // BUDGET CALCULATOR
+    function calcBudget() {
+      const c1 = parseFloat(document.getElementById('b_cost_1').value) || 0;
+      const c2 = parseFloat(document.getElementById('b_cost_2').value) || 0;
+      const c3 = parseFloat(document.getElementById('b_cost_3').value) || 0;
+      const c4 = parseFloat(document.getElementById('b_cost_4').value) || 0;
+      const total = c1 + c2 + c3 + c4;
+      document.getElementById('budget_total_display').innerText = `$${total.toLocaleString()}`;
+    }
+
+    // BOT PROMPT AUTO GENERATOR
+    function generateBotPromptTemplate() {
+      let caseName = "Selected Business";
+      let persona = "Prospect Executive";
+      let role = "Decision Maker";
+      let objections = "1. Budget limits, 2. Reliability risk, 3. Hard to switch";
+
+      if (currentSelectedCase === 'A') {
+        caseName = "Gourmet Food Truck Expansion (Catering)";
+        persona = "Corporate Event Director (e.g., Rachel Green)";
+        role = "VP of Employee Experience at a 150-person Tech Firm";
+        objections = "1. Needs guaranteed on-time setup, 2. Previous bad experience with outdoor caterers, 3. Price per head vs. standard box lunches.";
+      } else if (currentSelectedCase === 'B') {
+        caseName = "SaaS Pivot for Marketing Agencies";
+        persona = "Agency Managing Partner (e.g., Marcus Vance)";
+        role = "Owner of a 12-person Digital Agency";
+        objections = "1. Already using Slack+Trello, 2. Reluctant to retrain entire staff, 3. Needs multi-client billing transparency.";
+      } else if (currentSelectedCase === 'C') {
+        caseName = "Sustainable Ocean-Plastic Fashion Brand";
+        persona = "Eco-Conscious Urban Buyer (e.g., Alex Reed)";
+        role = "Target D2C Consumer";
+        objections = "1. Skeptical of greenwashing, 2. High price point ($180 jacket), 3. Unknown brand durability.";
+      } else if (currentSelectedCase === 'D') {
+        caseName = "CPA Firm Modern Rebrand";
+        persona = "Early-Stage Startup Founder (e.g., Jordan Lee)";
+        role = "Founder & CEO of Seed-funded SaaS startup";
+        objections = "1. Believes traditional CPA firms are slow and overpriced, 2. Prefers automated software (Pilot/Bench), 3. Needs R&D tax credit expertise.";
+      }
+
+      document.getElementById('bot_persona_name').value = persona;
+      document.getElementById('bot_company').value = role;
+      document.getElementById('bot_primary_concern').value = objections;
+
+      const fullPrompt = `You are ${persona}, serving as ${role}. You are currently evaluating offerings for ${caseName}.
+
+Persona Characteristics:
+- Tone: Professional, discerning, realistic, and initially guarded.
+- Primary Skepticisms: ${objections}
+- Buying Rules: You will NOT agree to buy or book until the salesperson uses consultative SPIN selling techniques, asks clarifying questions, acknowledges your pain points, and proposes clear risk mitigation or proof.
+- Pushback Trigger: If the salesperson makes vague, generic marketing claims without specific data or case evidence, call it out directly.
+
+Respond conversationally and realistically to every pitch prompt.`;
+
+      document.getElementById('bot_system_prompt').value = fullPrompt;
+    }
+
+    // SIMULATED CHAT PLAYGROUND LOGIC
+    function sendSimulatedPitch() {
+      const input = document.getElementById('sim_pitch_input');
+      const text = input.value.trim();
+      if (!text) return;
+
+      const history = document.getElementById('sim_chat_history');
+
+      // Append User message
+      const userBubble = document.createElement('div');
+      userBubble.className = "flex items-start justify-end space-x-2";
+      userBubble.innerHTML = `
+        <div class="bg-sky-600 text-white p-2.5 rounded-lg max-w-[85%] text-xs shadow-sm">
+          ${escapeHtml(text)}
+        </div>
+        <span class="bg-sky-800 text-white font-bold p-1 rounded text-[10px]">YOU</span>
+      `;
+      history.appendChild(userBubble);
+      input.value = '';
+
+      // Auto response simulating customer pushback
+      setTimeout(() => {
+        const botBubble = document.createElement('div');
+        botBubble.className = "flex items-start space-x-2";
+        
+        // Intelligent scripted heuristic response based on SPIN / questions
+        let botResponse = "That's an interesting claim, but how specifically do you address our tight schedule and budget constraints?";
+        const lower = text.toLowerCase();
+        if (lower.includes('?') && (lower.includes('how') || lower.includes('what') || lower.includes('frustrat'))) {
+          botResponse = "Good question. Our main headache has been predictability—when we plan major company offsites, we can't afford delays or low engagement. What tangible proof do you have from similar clients?";
+        } else if (lower.includes('guarantee') || lower.includes('proof') || lower.includes('testimonial')) {
+          botResponse = "Hearing that you have guarantees helps ease my concern. If you can provide a customized quote and sample package by tomorrow, I'd be willing to take a look.";
+        } else if (lower.length < 20) {
+          botResponse = "That seems a bit vague. Can you give me more specifics on the exact numbers, delivery timeframe, and pricing model?";
+        }
+
+        botBubble.innerHTML = `
+          <span class="bg-slate-800 text-white font-bold p-1 rounded text-[10px]">PROSPECT</span>
+          <div class="bg-white p-2.5 rounded-lg border border-slate-200 shadow-sm max-w-[85%] text-slate-800">
+            ${botResponse}
+          </div>
+        `;
+        history.appendChild(botBubble);
+        history.scrollTop = history.scrollHeight;
+      }, 600);
+
+      history.scrollTop = history.scrollHeight;
+    }
+
+    function resetSimChat() {
+      document.getElementById('sim_chat_history').innerHTML = `
+        <div class="flex items-start space-x-2">
+          <span class="bg-slate-800 text-white font-bold p-1 rounded text-[10px]">PROSPECT</span>
+          <div class="bg-white p-2.5 rounded-lg border border-slate-200 shadow-sm max-w-[85%] text-slate-800">
+            Hi there. Thanks for reaching out, but our team is pretty busy right now and we already have standard vendor contracts in place. What makes your solution worth my time?
+          </div>
+        </div>
+      `;
+    }
+
+    // IMAGE PREVIEW HELPER
+    function previewImage(input, previewId) {
+      if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const img = document.getElementById(previewId);
+          img.src = e.target.result;
+          document.getElementById(previewId + '_container').classList.remove('hidden');
+        }
+        reader.readAsDataURL(input.files[0]);
+      }
+    }
+
+    // ESCAPE HTML HELPER
+    function escapeHtml(string) {
+      return String(string).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // BUILD SUMMARY SNAPSHOT
+    function buildSummarySnapshot() {
+      const getVal = (id) => document.getElementById(id) ? document.getElementById(id).value : '';
+      const snap = document.getElementById('summarySnapshot');
+
+      snap.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div><strong>Case Selected:</strong> Option ${currentSelectedCase || 'None'}</div>
+          <div><strong>Campaign Objective:</strong> ${getVal('c1_objective_type')}</div>
+          <div><strong>SMART Goal:</strong> ${getVal('c1_smart_goal') || 'Not specified'}</div>
+          <div><strong>Qualification Framework:</strong> ${getVal('c2_qual_framework')}</div>
+          <div><strong>Lead Mix:</strong> ${getVal('c2_lead_mix')}</div>
+          <div><strong>Revenue Model:</strong> ${getVal('rev_model_type')}</div>
+          <div class="md:col-span-2"><strong>Core Thesis:</strong> ${getVal('case_thesis') || 'N/A'}</div>
+          <div class="md:col-span-2"><strong>Simulated Bot Prospect:</strong> ${getVal('bot_persona_name')} (${getVal('bot_company')})</div>
+        </div>
+      `;
+    }
+
+    // JSON BACKUP / IMPORT
+    function exportJSON() {
+      const data = {};
+      const inputs = document.querySelectorAll('input, select, textarea');
+      inputs.forEach(el => {
+        if (el.id) {
+          data[el.id] = el.value;
+        }
+      });
+      data.selectedCase = currentSelectedCase;
+      data.remainingSeconds = totalSeconds;
+
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Daveler_Lab_Strategy_Team_${Date.now()}.json`;
+      a.click();
+    }
+
+    function importJSON(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        try {
+          const data = JSON.parse(evt.target.result);
+          Object.keys(data).forEach(key => {
+            const el = document.getElementById(key);
+            if (el) el.value = data[key];
+          });
+          if (data.selectedCase) selectCase(data.selectedCase);
+          if (data.remainingSeconds) {
+            totalSeconds = data.remainingSeconds;
+            updateTimerDisplay();
+          }
+          alert("✅ State loaded successfully!");
+        } catch(err) {
+          alert("❌ Error reading JSON file: " + err.message);
+        }
+      }
+      reader.readAsText(file);
+    }
+
+    // PDF REPORT GENERATION
+    function generatePDFReport() {
+      document.getElementById('printTimestamp').innerText = `Generated: ${new Date().toLocaleString()}`;
+      
+      // Ensure all tabs are momentarily visible for PDF rendering, or build clean print clone
+      const opt = {
+        margin: [10, 10, 10, 10],
+        filename: `Daveler_Innovation_Lab_Submission_${Date.now()}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+
+      // Unhide all sections momentarily for html2pdf
+      const sections = ['tab-setup', 'tab-campaign', 'tab-leads', 'tab-funnel', 'tab-bot', 'tab-slides', 'tab-review'];
+      sections.forEach(s => document.getElementById(s).classList.remove('hidden'));
+
+      html2pdf().set(opt).from(document.getElementById('printableArea')).save().then(() => {
+        // Return to active tab
+        switchTab('tab-review');
+      });
+    }
+
+    // INIT
+    window.onload = function() {
+      updateTimerDisplay();
+      selectCase('A');
+    };
+  </script>
+</body>
+</html>
